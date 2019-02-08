@@ -1,4 +1,6 @@
 import java.util.Arrays;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class ServerInfo {
 	private static final int INFO_LENGTH = 48;
@@ -7,14 +9,28 @@ public class ServerInfo {
 	private int port;
 	private int count;
 	private int limit;
+        private boolean killed;
 	
-	public ServerInfo(String name, byte[] IP, int port, int count, int limit) {
+        public ServerInfo(String name, byte[] IP, int port, int count, int limit, boolean killed) {
 		this.name = name;
 		this.IP = IP;
 		this.port = port;
 		this.count = count;
 		this.limit = limit;
+		this.killed = killed;
 	}
+
+        public boolean isAlive() {
+	        return !killed;
+        }
+
+        public String getAddress() {
+	        try {
+		    return "" + InetAddress.getByAddress(IP);
+	        } catch (UnknownHostException e) {
+		        return null;
+		}
+        }
 	
 	public byte[] getBytes() {
 		byte[] bytes = new byte[INFO_LENGTH];

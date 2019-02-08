@@ -12,7 +12,7 @@ import java.util.concurrent.BlockingQueue;
 public class UpdateClientThread extends Thread {
 	private static final int PACKET_SIZE = 256;
 	private static final int INFO_SIZE = 48;
-	private static final int PACKET_HEADER = 8;
+	private static final int PACKET_HEADER = 16;
 
 	private BlockingQueue<DatagramPacket> queue;
 	private DatagramSocket socket;
@@ -48,6 +48,9 @@ public class UpdateClientThread extends Thread {
 			return;
 		}
 		List<DatagramPacket> responses = getResponses(packet.getAddress(), packet.getPort());
+		if (responses.size() == 0) {
+		    socket.send(new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, packet.getAddress(), packet.getPort()));
+		}
 		for (DatagramPacket p : responses) {
 			socket.send(p);
 		}
@@ -57,17 +60,24 @@ public class UpdateClientThread extends Thread {
 		LinkedList<DatagramPacket> responses = new LinkedList<DatagramPacket>();
 		Set<ServerInfo> servers = ServerSet.get();
 		Iterator<ServerInfo> iter = servers.iterator();
+		int deleteFlag = 1;
 		while (iter.hasNext()) {
 			byte[] responseBytes = new byte[PACKET_SIZE];
 			int i = 0;
 			for (; i < (PACKET_SIZE - PACKET_HEADER) / INFO_SIZE && iter.hasNext(); i++) {
 				ServerInfo currInfo = iter.next();
 				byte[] serverBytes = currInfo.getBytes();
-				System.arraycopy(serverBytes, 0, responseBytes, PACKET_HEADER + (i * serverBytes.length), serverBytes.length);
+				System.arraycopy(serverBytes, 0, responseBytes,
+						 PACKET_HEADER + (i * serverBytes.length),
+						 serverBytes.length);
+				if (!currInfo.isAlive()) {
+				    responseBytes[9] |= deleteFlag;
+				}
+				deleteFlag = deleteFlag << 1;
 			}
 			byte[] count = Utility.intToBytes(i);
 			System.arraycopy(count, 0, responseBytes, count.length, count.length);
-			DatagramPacket response = new DatagramPacket(responseBytes, PACKET_SIZE, client,port);
+			DatagramPacket response = new DatagramPacket(responseBytes, PACKET_SIZE, client, port);
 			responses.add(response);
 		}
 		ServerSet.release();

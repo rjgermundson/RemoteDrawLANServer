@@ -18,6 +18,8 @@ public class RegisterServerThread extends Thread {
 				if (isValid(packet)) {
 					System.out.println("Received server register from " + packet.getAddress());
 					ServerInfo info = parse(packet);
+					ServerSet.get().remove(info);
+					ServerSet.release();
 					ServerSet.get().add(info);
 					ServerSet.release();
 				} else {
@@ -39,6 +41,8 @@ public class RegisterServerThread extends Thread {
 	
 	private ServerInfo parse(DatagramPacket packet) {
 		byte[] data = packet.getData();
+		boolean kill = (data[0] & 1) == 1;
+		System.out.println("kill: " + kill);
 		byte[] IP = new byte[4];
 		for (int i = 0; i < IP.length; i++) {
 			IP[i] = data[8 + i];
@@ -59,6 +63,6 @@ public class RegisterServerThread extends Thread {
 		}
 		int limit = Utility.bytesToInt(limitBytes);
 		String name = new String(data, 24, 32);
-		return new ServerInfo(name, IP, port, count, limit);
+		return new ServerInfo(name, IP, port, count, limit, kill);
 	}
 }

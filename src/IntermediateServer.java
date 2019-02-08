@@ -13,6 +13,7 @@ public class IntermediateServer {
 	public static void main(String[] args) {
 		if (args.length != 2) {
 			System.out.println("Usage: java IntermediateServer <ip> <port>");
+			System.exit(1);
 		}
 		InetAddress address = null;
 		int port = -1;
@@ -53,7 +54,7 @@ public class IntermediateServer {
 				socket.receive(received);
 			} catch (IOException e) {
 				System.out.println("Failed to received packet from: " + received.getAddress());
-			}
+			}			
 			if ((received.getData()[0] & 256) == 256) {
 				// Server registry
 				try {
